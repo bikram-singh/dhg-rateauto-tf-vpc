@@ -20,13 +20,6 @@ resource "google_compute_subnetwork" "primary_subnet" {
   }
 
   private_ip_google_access = var.enable_private_ip_google_access
-
-  labels = {
-    aide-id      = var.aide_id
-    environment  = var.environment
-    service-tier = var.service_tier
-    subnet-type  = "primary"
-  }
 }
 
 # Secondary Subnet
@@ -43,13 +36,6 @@ resource "google_compute_subnetwork" "secondary_subnet" {
   }
 
   private_ip_google_access = var.enable_private_ip_google_access
-
-  labels = {
-    aide-id      = var.aide_id
-    environment  = var.environment
-    service-tier = var.service_tier
-    subnet-type  = "secondary"
-  }
 }
 
 # Optional: Cloud Router for NAT (if needed)
@@ -59,12 +45,6 @@ resource "google_compute_router" "router" {
   project = var.project_id
   region  = var.region
   network = google_compute_network.vpc.id
-
-  labels = {
-    aide-id      = var.aide_id
-    environment  = var.environment
-    service-tier = var.service_tier
-  }
 }
 
 # Optional: Cloud NAT (if needed)
