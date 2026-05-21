@@ -1,0 +1,81 @@
+name: "Provision VPC"
+
+permissions:
+  id-token: write
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      tfvars_file:
+        description: '📁 Relative path to your .tfvars file (e.g., environments/dev/dhg-rateauto-dev-terraform-state.tfvars)'
+        required: true
+      backend_tfvars_file:
+        description: '📁 Relative path to your .backend.tfvars file (e.g., environments/dev/dhg-rateauto-dev-terraform-state.backend.tfvars)'
+        required: true
+      environment:
+        type: choice
+        required: true
+        description: '🌍 Environment to deploy to'
+        options:
+          - 'dev'
+          - 'test'
+          - 'stage'
+          - 'prod'
+        default: 'dev'
+      action:
+        type: choice
+        required: true
+        description: '⚙️ Terraform action to perform'
+        options:
+          - 'plan'
+          - 'apply'
+          - 'destroy'
+        default: 'plan'
+
+jobs:
+  terraform:
+    name: "Terraform ${{ github.event.inputs.action }} [${{ github.event.inputs.environment }}]"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GCP via Workload Identity Federation
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER_NONPROD }}
+          service_account: ${{ secrets.GCP_WIF_SERVICE_ACCOUNT_NONPROD }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.4"
+
+      - name: Terraform Init
+        run: |
+          terraform init -backend-config=${{ github.event.inputs.backend_tfvars_file }}
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: |
+          terraform plan \
+            -var-file=environments/shared.tfvars \
+            -var-file=${{ github.event.inputs.tfvars_file }} \
+            -out=tfplan
+
+      - name: Terraform Apply
+        if: ${{ github.event.inputs.action == 'apply' }}
+        run: terraform apply -auto-approve tfplan
+
+      - name: Terraform Destroy
+        if: ${{ github.event.inputs.action == 'destroy' }}
+        run: |
+          terraform plan -destroy \
+            -var-file=environments/shared.tfvars \
+            -var-file=${{ github.event.inputs.tfvars_file }} \
+            -out=tfplan-destroy
+          terraform apply -auto-approve tfplan-destroy
