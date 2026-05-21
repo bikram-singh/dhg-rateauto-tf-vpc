@@ -3,12 +3,7 @@ resource "google_compute_network" "vpc" {
   project                 = var.project_id
   auto_create_subnetworks = false
   routing_mode            = var.routing_mode
-
-  labels = {
-    aide-id      = var.aide_id
-    environment  = var.environment
-    service-tier = var.service_tier
-  }
+  description             = "Environment: ${var.environment}"
 }
 
 # Primary Subnet
