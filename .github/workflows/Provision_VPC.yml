@@ -8,10 +8,10 @@ on:
   workflow_dispatch:
     inputs:
       tfvars_file:
-        description: '📁 Relative path to your .tfvars file (e.g., environments/dev/dhg-rateauto-dev-terraform-state.tfvars)'
+        description: '📁 Relative path to your .tfvars file (e.g., environments/dev/dhg-rateauto-dev-vpc.tfvars)'
         required: true
       backend_tfvars_file:
-        description: '📁 Relative path to your .backend.tfvars file (e.g., environments/dev/dhg-rateauto-dev-terraform-state.backend.tfvars)'
+        description: '📁 Relative path to your .backend.tfvars file (e.g., environments/dev/dhg-rateauto-dev-vpc.backend.tfvars)'
         required: true
       environment:
         type: choice
