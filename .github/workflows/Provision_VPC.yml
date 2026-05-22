@@ -11,7 +11,7 @@ on:
         description: '📁 Relative path to your .tfvars file (e.g., environments/dev/dhg-rateauto-dev-vpc.tfvars)'
         required: true
       backend_tfvars_file:
-        description: '📁 Relative path to your .backend.tfvars file (e.g., environments/dev/dhg-rateauto-dev-vpc.backend.tfvars)'
+        description: '📁 Relative path to your backend.tfvars file (e.g., environments/dev/dhg-rateauto-dev-vpc_backend.tfvars)'
         required: true
       environment:
         type: choice
@@ -30,8 +30,29 @@ on:
         options:
           - 'plan'
           - 'apply'
+          - 'import'
           - 'destroy'
         default: 'plan'
+      project_id:
+        description: '🔑 GCP Project ID (required for import, e.g., dhg-vaccine-rateauto-nonpord)'
+        required: false
+        default: 'dhg-vaccine-rateauto-nonpord'
+      vpc_name:
+        description: '🌐 VPC name (required for import, e.g., dhg-rateauto-dev-vpc)'
+        required: false
+        default: ''
+      primary_subnet_name:
+        description: '🔀 Primary subnet name (required for import, e.g., dhg-rateauto-dev-primary-subnet)'
+        required: false
+        default: ''
+      secondary_subnet_name:
+        description: '🔀 Secondary subnet name (required for import, e.g., dhg-rateauto-dev-secondary-subnet)'
+        required: false
+        default: ''
+      region:
+        description: '📍 GCP Region (required for import)'
+        required: false
+        default: 'us-central1'
 
 jobs:
   terraform:
@@ -60,10 +81,52 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
-      - name: Terraform Plan
+      # ─── IMPORT ────────────────────────────────────────────────────────────
+      - name: Terraform Import - VPC Network
+        if: ${{ github.event.inputs.action == 'import' }}
+        run: |
+          terraform import \
+            -var-file=${{ github.event.inputs.tfvars_file }} \
+            google_compute_network.vpc \
+            projects/${{ github.event.inputs.project_id }}/global/networks/${{ github.event.inputs.vpc_name }}
+
+      - name: Terraform Import - Primary Subnet
+        if: ${{ github.event.inputs.action == 'import' }}
+        run: |
+          terraform import \
+            -var-file=${{ github.event.inputs.tfvars_file }} \
+            google_compute_subnetwork.primary_subnet \
+            projects/${{ github.event.inputs.project_id }}/regions/${{ github.event.inputs.region }}/subnetworks/${{ github.event.inputs.primary_subnet_name }}
+
+      - name: Terraform Import - Secondary Subnet
+        if: ${{ github.event.inputs.action == 'import' }}
+        run: |
+          terraform import \
+            -var-file=${{ github.event.inputs.tfvars_file }} \
+            google_compute_subnetwork.secondary_subnet \
+            projects/${{ github.event.inputs.project_id }}/regions/${{ github.event.inputs.region }}/subnetworks/${{ github.event.inputs.secondary_subnet_name }}
+
+      - name: Terraform Plan (post-import drift check)
+        if: ${{ github.event.inputs.action == 'import' }}
         run: |
           terraform plan \
-            -var-file=environments/shared.tfvars \
+            -var-file=${{ github.event.inputs.tfvars_file }} \
+            -out=tfplan-import
+          echo "✅ Import complete. Review the plan above for any drift (e.g. secondary range name changes). Run 'apply' to reconcile."
+
+      # ─── PLAN ──────────────────────────────────────────────────────────────
+      - name: Terraform Plan
+        if: ${{ github.event.inputs.action == 'plan' }}
+        run: |
+          terraform plan \
+            -var-file=${{ github.event.inputs.tfvars_file }} \
+            -out=tfplan
+
+      # ─── APPLY ─────────────────────────────────────────────────────────────
+      - name: Terraform Plan (pre-apply)
+        if: ${{ github.event.inputs.action == 'apply' }}
+        run: |
+          terraform plan \
             -var-file=${{ github.event.inputs.tfvars_file }} \
             -out=tfplan
 
@@ -71,11 +134,14 @@ jobs:
         if: ${{ github.event.inputs.action == 'apply' }}
         run: terraform apply -auto-approve tfplan
 
-      - name: Terraform Destroy
+      # ─── DESTROY ───────────────────────────────────────────────────────────
+      - name: Terraform Plan Destroy
         if: ${{ github.event.inputs.action == 'destroy' }}
         run: |
           terraform plan -destroy \
-            -var-file=environments/shared.tfvars \
             -var-file=${{ github.event.inputs.tfvars_file }} \
             -out=tfplan-destroy
-          terraform apply -auto-approve tfplan-destroy
+
+      - name: Terraform Destroy
+        if: ${{ github.event.inputs.action == 'destroy' }}
+        run: terraform apply -auto-approve tfplan-destroy
