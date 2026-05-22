@@ -1,64 +1,119 @@
+locals {
+  vpc_name    = var.network_name
+  subnet_name = var.subnetwork_name
+}
+
+# ----------------------------------------------------------------------------
+# VPC Network
+# ----------------------------------------------------------------------------
 resource "google_compute_network" "vpc" {
-  name                    = var.vpc_name
-  project                 = var.project_id
-  auto_create_subnetworks = false
-  routing_mode            = var.routing_mode
-  description             = "Environment: ${var.environment}"
+  name                            = local.vpc_name
+  project                         = var.project_id
+  auto_create_subnetworks         = false
+  routing_mode                    = "REGIONAL"
+  delete_default_routes_on_create = false
+
+  description = "VPC network for ${var.stage} environment"
 }
 
-# Primary Subnet
-resource "google_compute_subnetwork" "primary_subnet" {
-  name          = var.primary_subnet_name
-  ip_cidr_range = var.primary_subnet_cidr
+# ----------------------------------------------------------------------------
+# Subnet (single) with secondary ranges for GKE pods and services
+# ----------------------------------------------------------------------------
+resource "google_compute_subnetwork" "subnet" {
+  name          = local.subnet_name
+  project       = var.project_id
   region        = var.region
   network       = google_compute_network.vpc.id
-  project       = var.project_id
+  ip_cidr_range = var.subnet_primary_cidr
+
+  private_ip_google_access = true
 
   secondary_ip_range {
-    range_name    = var.primary_secondary_range_name
-    ip_cidr_range = var.primary_secondary_cidr
+    range_name    = var.pods_range_name
+    ip_cidr_range = var.pods_cidr
   }
-
-  private_ip_google_access = var.enable_private_ip_google_access
-}
-
-# Secondary Subnet
-resource "google_compute_subnetwork" "secondary_subnet" {
-  name          = var.secondary_subnet_name
-  ip_cidr_range = var.secondary_subnet_cidr
-  region        = var.region
-  network       = google_compute_network.vpc.id
-  project       = var.project_id
 
   secondary_ip_range {
-    range_name    = var.secondary_secondary_range_name
-    ip_cidr_range = var.secondary_secondary_cidr
+    range_name    = var.services_range_name
+    ip_cidr_range = var.services_cidr
   }
 
-  private_ip_google_access = var.enable_private_ip_google_access
+  log_config {
+    aggregation_interval = "INTERVAL_10_MIN"
+    flow_sampling        = 0.5
+    metadata             = "INCLUDE_ALL_METADATA"
+  }
 }
 
-# Optional: Cloud Router for NAT (if needed)
+# ----------------------------------------------------------------------------
+# Cloud Router (required for Private Google Access / NAT)
+# ----------------------------------------------------------------------------
 resource "google_compute_router" "router" {
-  count   = var.enable_cloud_router ? 1 : 0
-  name    = var.router_name
+  name    = "${local.vpc_name}-router"
   project = var.project_id
   region  = var.region
   network = google_compute_network.vpc.id
 }
 
-# Optional: Cloud NAT (if needed)
+# ----------------------------------------------------------------------------
+# Cloud NAT (allows private nodes to reach the internet for image pulls, etc.)
+# ----------------------------------------------------------------------------
 resource "google_compute_router_nat" "nat" {
-  count                              = var.enable_cloud_nat ? 1 : 0
-  name                               = var.nat_name
-  router                             = google_compute_router.router[0].name
-  region                             = google_compute_router.router[0].region
-  nat_ip_allocate_option             = var.nat_ip_allocate_option
-  source_subnetwork_ip_ranges_to_nat = var.source_subnetwork_ip_ranges_to_nat
-  auto_network_tier                  = var.nat_auto_network_tier
+  name                               = "${local.vpc_name}-nat"
+  project                            = var.project_id
+  router                             = google_compute_router.router.name
+  region                             = var.region
+  nat_ip_allocate_option             = "AUTO_ONLY"
+  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
 
   log_config {
-    enable = var.enable_nat_logs
-    filter = var.nat_log_filter
+    enable = true
+    filter = "ERRORS_ONLY"
   }
+}
+
+# ----------------------------------------------------------------------------
+# Firewall — deny all ingress (default-deny baseline)
+# ----------------------------------------------------------------------------
+resource "google_compute_firewall" "deny_all_ingress" {
+  name      = "${local.vpc_name}-deny-all-ingress"
+  project   = var.project_id
+  network   = google_compute_network.vpc.id
+  direction = "INGRESS"
+  priority  = 65534
+
+  deny {
+    protocol = "all"
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+}
+
+# ----------------------------------------------------------------------------
+# Firewall — allow internal traffic within the VPC
+# ----------------------------------------------------------------------------
+resource "google_compute_firewall" "allow_internal" {
+  name      = "${local.vpc_name}-allow-internal"
+  project   = var.project_id
+  network   = google_compute_network.vpc.id
+  direction = "INGRESS"
+  priority  = 1000
+
+  allow {
+    protocol = "tcp"
+  }
+
+  allow {
+    protocol = "udp"
+  }
+
+  allow {
+    protocol = "icmp"
+  }
+
+  source_ranges = [
+    var.subnet_primary_cidr,
+    var.pods_cidr,
+    var.services_cidr,
+  ]
 }

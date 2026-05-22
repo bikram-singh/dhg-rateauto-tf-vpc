@@ -1,3 +1,4 @@
 # Test Environment Backend Configuration
 bucket = "dhg-rateauto-test-terraform-state"
-prefix = "vpc/state"
+prefix = "test/vpc/dhg-rateauto-test-vpc/terraform.tfstate"
+
