@@ -86,13 +86,13 @@ The network follows a strict **private-by-default** philosophy:
 
 ---
 
-### 🔌 Subnet Secondary Ranges for GKE
+### 🔌 VPC Subnet
 ![VPC Subnet](docs/gallery/vpc-subnet.png)
 
 ---
 
-### 🗂️ Primary & Secondary Ranges
-![VPC Primary and Secondary Ranges](docs/gallery/vpc-primary-secondary-ranges.png)
+### 🗂️ Subnet Ranges for GKE Pods & Services
+![VPC Primary and Secondary Ranges](docs/gallery/subnet-range-for-gke-pod-n-services.png)
 
 ---
 
