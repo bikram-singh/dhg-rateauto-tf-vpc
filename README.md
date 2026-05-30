@@ -5,7 +5,7 @@
 # 🌐 dhg-rateauto-tf-vpc
 
 ### Terraform · Google Cloud VPC · Private Network Foundation
-### DHG Rate Automation Platform — `dhg-vaccine-rateauto-nonpord`
+### DHG Rate Automation Platform - `dhg-vaccine-rateauto-nonpord`
 
 [![Terraform](https://img.shields.io/badge/Terraform-%3E%3D1.4-7B42BC?logo=terraform&logoColor=white)](https://www.terraform.io)
 [![GCP VPC](https://img.shields.io/badge/GCP-Virtual_Private_Cloud-4285F4?logo=google-cloud&logoColor=white)](https://cloud.google.com/vpc)
@@ -16,7 +16,7 @@
 
 ---
 
-*Provisions the foundational private network layer for the DHG Vaccine Fee platform - custom VPC, GKE-ready subnet with secondary ranges, Cloud Router, Cloud NAT, VPC Flow Logs, and a default-deny firewall baseline — all built for zero public exposure.*
+*Provisions the foundational private network layer for the DHG Vaccine Fee platform - custom VPC, GKE-ready subnet with secondary ranges, Cloud Router, Cloud NAT, VPC Flow Logs, and a default-deny firewall baseline - all built for zero public exposure.*
 
 </div>
 
@@ -51,13 +51,13 @@
 
 ## 🌐 Overview
 
-This repository provisions the **foundational network layer** for the DHG Rate Automation platform on Google Cloud Platform. It is the **very first infrastructure component** deployed — every other resource (GKE cluster, Cloud SQL, GCS buckets, load balancers) depends on this VPC existing first.
+This repository provisions the **foundational network layer** for the DHG Rate Automation platform on Google Cloud Platform. It is the **very first infrastructure component** deployed - every other resource (GKE cluster, Cloud SQL, GCS buckets, load balancers) depends on this VPC existing first.
 
 The network follows a strict **private-by-default** philosophy:
 - 🔒 GKE worker nodes get **no public IP addresses**
 - 🗄️ Cloud SQL is accessible only via **private PSC IP** inside the VPC
 - 🌍 Outbound internet access for nodes is tunnelled through **Cloud NAT only**
-- 🚫 All inbound traffic is **blocked by default** — explicit allow rules only
+- 🚫 All inbound traffic is **blocked by default** - explicit allow rules only
 - 📋 VPC **Flow Logs** record traffic for security audit and debugging
 
 ### 🔑 Key Facts
@@ -73,7 +73,7 @@ The network follows a strict **private-by-default** philosophy:
 | ⚙️ **Service CIDR** | `10.10.32.0/24` |
 | 🛡️ **Default Inbound** | DENY ALL |
 | 🔄 **Outbound** | Cloud NAT (auto IP) |
-| 📊 **Flow Logs** | Enabled — 50% sampling, 10 min |
+| 📊 **Flow Logs** | Enabled - 50% sampling, 10 min |
 
 ---
 
@@ -81,7 +81,7 @@ The network follows a strict **private-by-default** philosophy:
 
 > 📌 **Note:** All images are stored in `docs/gallery/`. Upload your screenshots there to display them here.
 
-### 🌐 VPC Network — GCP Console View
+### 🌐 VPC Network - GCP Console View
 ![VPC Network Console](docs/gallery/vpc-network-console.png)
 
 ---
@@ -108,8 +108,8 @@ Google Cloud creates a **default VPC** automatically in every project. However, 
 | **Flow Logs** | Disabled by default | Enabled at 50% sampling |
 | **Firewall rules** | Overly permissive defaults | Default-deny baseline |
 | **Routing mode** | Global | Regional (better isolation) |
-| **Auditability** | Hard to track manual changes | 100% Terraform — every change in Git |
-| **IaC managed** | No | Yes — repeatable across environments |
+| **Auditability** | Hard to track manual changes | 100% Terraform - every change in Git |
+| **IaC managed** | No | Yes - repeatable across environments |
 
 A custom VPC gives complete control, better security posture, and clear ownership of every network resource.
 
@@ -181,7 +181,7 @@ A custom VPC gives complete control, better security posture, and clear ownershi
 
 ### 1️⃣ Single Subnet with Three CIDR Ranges
 
-The VPC uses **one subnet** with three IP ranges — a primary range for nodes and two secondary ranges for GKE workloads:
+The VPC uses **one subnet** with three IP ranges - a primary range for nodes and two secondary ranges for GKE workloads:
 
 ```
 Subnet: dhg-rateauto-dev-subnet
@@ -198,7 +198,7 @@ GKE **requires** dedicated secondary ranges because pods and services need their
 routing_mode = "REGIONAL"
 ```
 
-Regional routing means routes are only advertised within the same region (`us-central1`). This provides better **isolation between environments** — a dev VPC cannot accidentally route to a prod VPC through a misconfigured global route.
+Regional routing means routes are only advertised within the same region (`us-central1`). This provides better **isolation between environments** - a dev VPC cannot accidentally route to a prod VPC through a misconfigured global route.
 
 ### 3️⃣ Private Google Access
 
@@ -206,7 +206,7 @@ Regional routing means routes are only advertised within the same region (`us-ce
 private_ip_google_access = true
 ```
 
-This is critical for GKE nodes with no public IPs. Without it, private nodes cannot reach Google APIs (Container Registry, Artifact Registry, Cloud Storage, Secret Manager). With it enabled, API traffic goes through Google's internal network — no internet traversal, no public IP needed.
+This is critical for GKE nodes with no public IPs. Without it, private nodes cannot reach Google APIs (Container Registry, Artifact Registry, Cloud Storage, Secret Manager). With it enabled, API traffic goes through Google's internal network - no internet traversal, no public IP needed.
 
 ### 4️⃣ auto_create_subnetworks = false
 
@@ -214,7 +214,7 @@ This is critical for GKE nodes with no public IPs. Without it, private nodes can
 auto_create_subnetworks = false
 ```
 
-Prevents Google from auto-creating subnets in all regions. We manage our own subnet explicitly — cleaner, more secure, and easier to audit.
+Prevents Google from auto-creating subnets in all regions. We manage our own subnet explicitly - cleaner, more secure, and easier to audit.
 
 ### 5️⃣ delete_default_routes_on_create = false
 
@@ -289,9 +289,9 @@ gcloud services enable compute.googleapis.com \
 
 ## 🔍 File-by-File Breakdown
 
-### 📄 `main.tf` — All 6 Resources (119 lines)
+### 📄 `main.tf` - All 6 Resources (119 lines)
 
-#### 🌐 Resource 1 — VPC Network
+#### 🌐 Resource 1 - VPC Network
 
 ```hcl
 resource "google_compute_network" "vpc" {
@@ -304,7 +304,7 @@ resource "google_compute_network" "vpc" {
 }
 ```
 
-**Why no auto subnets:** Auto-created subnets span all GCP regions with pre-defined CIDRs — wasteful and harder to audit. Our single explicit subnet gives full control.
+**Why no auto subnets:** Auto-created subnets span all GCP regions with pre-defined CIDRs - wasteful and harder to audit. Our single explicit subnet gives full control.
 
 ---
 
@@ -337,7 +337,7 @@ resource "google_compute_subnetwork" "subnet" {
 }
 ```
 
-**Secondary ranges** are not just nice-to-have — they are **required by GKE** for VPC-native pod networking. Without them, GKE cluster creation will fail.
+**Secondary ranges** are not just nice-to-have - they are **required by GKE** for VPC-native pod networking. Without them, GKE cluster creation will fail.
 
 **Flow Logs at 50%:** Logging every single packet would be prohibitively expensive. 50% sampling captures enough to detect patterns and debug issues while keeping Cloud Logging costs manageable.
 
@@ -354,7 +354,7 @@ resource "google_compute_router" "router" {
 }
 ```
 
-Cloud Router is required as the parent resource for Cloud NAT. It uses BGP internally but in this configuration there is no custom BGP peering — it purely serves as the anchor for the NAT gateway. No additional configuration is needed.
+Cloud Router is required as the parent resource for Cloud NAT. It uses BGP internally but in this configuration there is no custom BGP peering - it purely serves as the anchor for the NAT gateway. No additional configuration is needed.
 
 ---
 
@@ -376,9 +376,9 @@ resource "google_compute_router_nat" "nat" {
 }
 ```
 
-**`AUTO_ONLY`:** Google automatically allocates and rotates NAT external IPs — no manual IP reservation, no operational overhead.
+**`AUTO_ONLY`:** Google automatically allocates and rotates NAT external IPs - no manual IP reservation, no operational overhead.
 
-**`ALL_SUBNETWORKS_ALL_IP_RANGES`:** Covers nodes (primary CIDR), pods (secondary), and services (secondary) — all private addresses can use NAT for outbound access.
+**`ALL_SUBNETWORKS_ALL_IP_RANGES`:** Covers nodes (primary CIDR), pods (secondary), and services (secondary) - all private addresses can use NAT for outbound access.
 
 **`ERRORS_ONLY`:** Logs only failed NAT translations. Logging all successful connections would flood Cloud Logging with millions of entries daily and generate significant costs.
 
@@ -428,7 +428,7 @@ resource "google_compute_firewall" "allow_internal" {
 }
 ```
 
-**Priority 1000** — much higher than the deny-all at 65534. This rule is evaluated first for internal traffic, allowing all three protocols within the VPC:
+**Priority 1000** - much higher than the deny-all at 65534. This rule is evaluated first for internal traffic, allowing all three protocols within the VPC:
 
 | Protocol | Purpose |
 |---|---|
@@ -438,7 +438,7 @@ resource "google_compute_firewall" "allow_internal" {
 
 ---
 
-### 📄 `variables.tf` — 10 Input Variables (70 lines)
+### 📄 `variables.tf` - 10 Input Variables (70 lines)
 
 Clean, well-organised variable file with five logical groups:
 
@@ -452,7 +452,7 @@ Group 4: Labels         → resource_labels
 
 ---
 
-### 📄 `outputs.tf` — 10 Outputs (49 lines)
+### 📄 `outputs.tf` - 10 Outputs (49 lines)
 
 All outputs are consumed by the `dhg-rateauto-tf-gke` repo:
 
@@ -477,26 +477,26 @@ output "nat_name"            { value = google_compute_router_nat.nat.name }
 
 | Variable | Type | Default | Required | Description |
 |---|---|---|---|---|
-| `project_id` | `string` | — | ✅ | GCP project ID to provision the VPC in |
+| `project_id` | `string` | - | ✅ | GCP project ID to provision the VPC in |
 | `region` | `string` | `us-central1` | No | GCP region for the VPC and subnet |
-| `stage` | `string` | — | ✅ | Environment label: `dev`, `test`, `stage`, `prod` |
+| `stage` | `string` | - | ✅ | Environment label: `dev`, `test`, `stage`, `prod` |
 
 ### 🌐 Network Naming
 
 | Variable | Type | Default | Required | Description |
 |---|---|---|---|---|
-| `network_name` | `string` | — | ✅ | Name of the VPC network to create |
-| `subnetwork_name` | `string` | — | ✅ | Name of the subnet inside the VPC |
+| `network_name` | `string` | - | ✅ | Name of the VPC network to create |
+| `subnetwork_name` | `string` | - | ✅ | Name of the subnet inside the VPC |
 
 ### 📍 CIDR Ranges
 
 | Variable | Type | Default | Required | Description |
 |---|---|---|---|---|
-| `subnet_primary_cidr` | `string` | — | ✅ | Primary IP range for GKE nodes |
+| `subnet_primary_cidr` | `string` | - | ✅ | Primary IP range for GKE nodes |
 | `pods_range_name` | `string` | `gke-pods` | No | Secondary range name for GKE pod IPs |
-| `pods_cidr` | `string` | — | ✅ | IP range for GKE pod IPs |
+| `pods_cidr` | `string` | - | ✅ | IP range for GKE pod IPs |
 | `services_range_name` | `string` | `gke-services` | No | Secondary range name for GKE service IPs |
-| `services_cidr` | `string` | — | ✅ | IP range for GKE service ClusterIPs |
+| `services_cidr` | `string` | - | ✅ | IP range for GKE service ClusterIPs |
 
 ### 🏷️ Labels
 
@@ -529,7 +529,7 @@ All 10 outputs are consumed by the `dhg-rateauto-tf-gke` repository to attach th
 
 ### Priority System
 
-GCP evaluates firewall rules in **priority order** — lower number wins:
+GCP evaluates firewall rules in **priority order** - lower number wins:
 
 ```
 Priority 1000  → allow-internal     ✅ Allow TCP+UDP+ICMP from VPC CIDRs
@@ -562,7 +562,7 @@ Node     → Internet     ✅  ALLOWED (Cloud NAT, outbound only)
 
 ICMP is required for:
 - Network connectivity testing between pods
-- **Path MTU Discovery** — TCP relies on ICMP to negotiate maximum packet size across hops. Without it, large packets are silently dropped and connections hang
+- **Path MTU Discovery** - TCP relies on ICMP to negotiate maximum packet size across hops. Without it, large packets are silently dropped and connections hang
 - Kubernetes liveness probes that use ping
 
 ---
@@ -572,7 +572,7 @@ ICMP is required for:
 ### How Cloud NAT Works for GKE Private Nodes
 
 ```
-GKE Node (10.10.0.5)  — private IP, no public IP
+GKE Node (10.10.0.5)  - private IP, no public IP
     │
     │  Wants to pull image from: us-central1-docker.pkg.dev
     │
@@ -583,7 +583,7 @@ Cloud Router (sees outbound packet from 10.10.0.5)
 Cloud NAT (translates 10.10.0.5 → auto-assigned public IP e.g. 34.x.x.x)
     │
     ▼
-Google Artifact Registry — sees request from 34.x.x.x
+Google Artifact Registry - sees request from 34.x.x.x
     │
     ▼
 Response back → NAT translates 34.x.x.x → 10.10.0.5
@@ -614,7 +614,7 @@ Google automatically provisions and rotates the external IPs used for NAT:
 - ✅ Automatically adds more IPs as outbound traffic grows
 - ✅ No operational overhead
 
-The alternative (`MANUAL_ONLY`) requires reserving specific static IPs — only useful when you need a fixed egress IP for allowlisting with external services.
+The alternative (`MANUAL_ONLY`) requires reserving specific static IPs - only useful when you need a fixed egress IP for allowlisting with external services.
 
 ---
 
@@ -630,7 +630,7 @@ log_config {
 
 ### What Gets Logged
 
-Flow Logs capture **network flow records** — not packet payloads, but connection metadata:
+Flow Logs capture **network flow records** - not packet payloads, but connection metadata:
 
 ```json
 {
@@ -749,7 +749,7 @@ gcloud auth application-default login
 # 3. Initialise Terraform (downloads provider, configures GCS backend)
 terraform init
 
-# 4. Plan — review what will be created
+# 4. Plan - review what will be created
 terraform plan -var-file=environments/dev.tfvars -out=tfplan
 
 # 5. Apply
@@ -786,7 +786,7 @@ gcloud compute routers nats describe dhg-rateauto-dev-vpc-nat \
 ### 🗑️ Destroy
 
 ```bash
-# ⚠️ Destroy GKE, routing, and Postgres FIRST — VPC must be destroyed last
+# ⚠️ Destroy GKE, routing, and Postgres FIRST - VPC must be destroyed last
 terraform destroy -var-file=environments/dev.tfvars
 ```
 
@@ -828,7 +828,7 @@ resource "google_container_cluster" "gke" {
 ### Deployment Order
 
 ```
-1️⃣  dhg-rateauto-tf-vpc           ← This repo — must be FIRST
+1️⃣  dhg-rateauto-tf-vpc           ← This repo - must be FIRST
          ↓ outputs: network_name, subnetwork_name, pods_range_name, services_range_name
 2️⃣  dhg-rateauto-tf-gke           ← Consumes VPC outputs
 2️⃣  dhg-rateauto-tf-postgres      ← Also uses VPC (network, subnetwork for PSC)
@@ -895,34 +895,34 @@ No JSON key files stored anywhere. The OIDC token is minted per workflow run and
 ### Defence-in-Depth Model
 
 ```
-Layer 1 — No Public Node IPs
+Layer 1 - No Public Node IPs
          GKE nodes: enable_private_nodes = true
          Result: nodes are unreachable from internet
 
-Layer 2 — Default-Deny Firewall
+Layer 2 - Default-Deny Firewall
          deny-all-ingress at priority 65534
          Result: zero inbound traffic unless explicitly allowed
 
-Layer 3 — Internal-Only Allow Rule
+Layer 3 - Internal-Only Allow Rule
          allow-internal at priority 1000
          Source: VPC CIDRs only
          Result: pod-to-pod, node-to-node communication works
                  external traffic remains blocked
 
-Layer 4 — Outbound via NAT Only
+Layer 4 - Outbound via NAT Only
          Cloud NAT with AUTO_ONLY IPs
          Result: nodes can reach internet (image pulls, updates)
                  but internet cannot initiate connections to nodes
 
-Layer 5 — Private Google Access
+Layer 5 - Private Google Access
          private_ip_google_access = true
          Result: Google API calls stay on Google's internal network
 
-Layer 6 — Flow Logs
+Layer 6 - Flow Logs
          50% sampling, all metadata
          Result: traffic patterns visible for security auditing
 
-Layer 7 — WIF for CI/CD
+Layer 7 - WIF for CI/CD
          No JSON keys stored anywhere
          Result: no credential leakage risk from repository
 ```
@@ -932,7 +932,7 @@ Layer 7 — WIF for CI/CD
 | Direction | Default | Our Config |
 |---|---|---|
 | **Ingress** | GCP implied allow-all (65535) | Overridden: deny-all (65534), allow-internal (1000) |
-| **Egress** | GCP implied allow-all | Unchanged — nodes can reach internet via NAT |
+| **Egress** | GCP implied allow-all | Unchanged - nodes can reach internet via NAT |
 
 ---
 
@@ -966,7 +966,7 @@ The `~> 5.0` constraint allows patch and minor updates within the `5.x` series a
 
 | Repository | Purpose | Deploy Order |
 |---|---|---|
-| [`dhg-rateauto-tf-vpc`](https://github.com/bikram-singh/dhg-rateauto-tf-vpc) | **This repo** — VPC, Subnet, NAT, Firewall | 1️⃣ First — always |
+| [`dhg-rateauto-tf-vpc`](https://github.com/bikram-singh/dhg-rateauto-tf-vpc) | **This repo** - VPC, Subnet, NAT, Firewall | 1️⃣ First - always |
 | [`dhg-rateauto-tf-postgres`](https://github.com/bikram-singh/dhg-rateauto-tf-postgres) | Cloud SQL PostgreSQL + PSC | 2️⃣ Parallel |
 | [`dhg-rateauto-tf-gke`](https://github.com/bikram-singh/dhg-rateauto-tf-gke) | GKE Autopilot Cluster | 2️⃣ Parallel |
 | [`dhg-rateauto-tf-gke-routing`](https://github.com/bikram-singh/dhg-rateauto-tf-gke-routing) | Gateway API, HTTPS, Routing | 3️⃣ Third |
