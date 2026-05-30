@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/gallery/DHG_logo.png" alt="DHG Logo" width="90" height="90"/>
+
 # 🌐 dhg-rateauto-tf-vpc
 
 ### Terraform · Google Cloud VPC · Private Network Foundation
@@ -14,7 +16,7 @@
 
 ---
 
-*Provisions the foundational private network layer for the DHG Vaccine Fee platform — custom VPC, GKE-ready subnet with secondary ranges, Cloud Router, Cloud NAT, VPC Flow Logs, and a default-deny firewall baseline — all built for zero public exposure.*
+*Provisions the foundational private network layer for the DHG Vaccine Fee platform - custom VPC, GKE-ready subnet with secondary ranges, Cloud Router, Cloud NAT, VPC Flow Logs, and a default-deny firewall baseline — all built for zero public exposure.*
 
 </div>
 
@@ -23,6 +25,7 @@
 ## 📋 Table of Contents
 
 - [Overview](#-overview)
+- [UI Gallery](#-ui-gallery)
 - [Why a Custom VPC](#-why-a-custom-vpc)
 - [Architecture](#-architecture)
 - [Network Design Decisions](#-network-design-decisions)
@@ -73,6 +76,26 @@ The network follows a strict **private-by-default** philosophy:
 | 📊 **Flow Logs** | Enabled — 50% sampling, 10 min |
 
 ---
+
+## 🖼️ UI Gallery
+
+> 📌 **Note:** All images are stored in `docs/gallery/`. Upload your screenshots there to display them here.
+
+### 🌐 VPC Network — GCP Console View
+![VPC Network Console](docs/gallery/vpc-network-console.png)
+
+---
+
+### 🔌 Subnet Secondary Ranges for GKE
+![VPC Subnet](docs/gallery/vpc-subnet.png)
+
+---
+
+### 🗂️ Primary & Secondary Ranges
+![VPC Primary and Secondary Ranges](docs/gallery/vpc-primary-secondary-ranges.png)
+
+---
+
 
 ## 💡 Why a Custom VPC
 
@@ -285,7 +308,7 @@ resource "google_compute_network" "vpc" {
 
 ---
 
-#### 🔌 Resource 2 — Subnet with Secondary Ranges
+#### 🔌 Resource 2 - Subnet with Secondary Ranges
 
 ```hcl
 resource "google_compute_subnetwork" "subnet" {
@@ -320,7 +343,7 @@ resource "google_compute_subnetwork" "subnet" {
 
 ---
 
-#### 🔄 Resource 3 — Cloud Router
+#### 🔄 Resource 3 - Cloud Router
 
 ```hcl
 resource "google_compute_router" "router" {
@@ -335,7 +358,7 @@ Cloud Router is required as the parent resource for Cloud NAT. It uses BGP inter
 
 ---
 
-#### 🌍 Resource 4 — Cloud NAT
+#### 🌍 Resource 4 - Cloud NAT
 
 ```hcl
 resource "google_compute_router_nat" "nat" {
@@ -361,7 +384,7 @@ resource "google_compute_router_nat" "nat" {
 
 ---
 
-#### 🚫 Resource 5 — Deny All Ingress Firewall
+#### 🚫 Resource 5 - Deny All Ingress Firewall
 
 ```hcl
 resource "google_compute_firewall" "deny_all_ingress" {
@@ -383,7 +406,7 @@ resource "google_compute_firewall" "deny_all_ingress" {
 
 ---
 
-#### ✅ Resource 6 — Allow Internal Firewall
+#### ✅ Resource 6 - Allow Internal Firewall
 
 ```hcl
 resource "google_compute_firewall" "allow_internal" {
